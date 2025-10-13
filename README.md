@@ -17,8 +17,8 @@
 まずはこのリポジトリを自分の PC に持ってこよう。
 
 ```bash
-git clone https://github.com/your-username/my-discord-bot.git
-cd my-discord-bot
+git clone https://github.com/riozee/rust-discord-bot.git
+cd rust-discord-bot
 ```
 
 ### 3\. 依存関係のインストール
