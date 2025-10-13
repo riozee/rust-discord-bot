@@ -79,6 +79,13 @@ PR くれたら誰かが見て、問題なさそうならマージしてボッ�
 
 ---
 
+## 📝 変更履歴 (Changelog)
+
+- 2025-10-13: コマンドを「1 ファイル = 1 コマンド」の構成にリファクタリングしました。例: `src/commands/ping.rs`, `src/commands/help.rs`。
+  - 追加方法（超簡単）: `src/commands/<name>.rs` に `pub async fn run(ctx: &Context, msg: &Message)` を実装 → `src/commands/mod.rs` に `pub mod <name>;` を追加 → `src/main.rs` の `match` に `"<name>" => commands::<name>::run(&ctx, &msg).await` を追加。
+
+---
+
 ## 🔧 テスト用の Bot を作る方法
 
 本番の Bot に影響が出ないように、開発中は自分専用のテスト Bot を使おう！
@@ -91,6 +98,7 @@ PR くれたら誰かが見て、問題なさそうならマージしてボッ�
 2.  **Bot を作ってトークンをコピー**
 
     - 左のメニューから「**Bot**」タブを選んで「**Add Bot**」をクリック。
+
     - 「**TOKEN**」のところにある「**Reset Token**」か「**View Token**」を押して、表示されたトークンをコピー。**このトークンはパスワードみたいなものだから、絶対に人に教えたり、GitHub に上げたりしちゃダメだよ！** 🤫
 
 3.  **メッセージが読めるように設定**
@@ -100,13 +108,17 @@ PR くれたら誰かが見て、問題なさそうならマージしてボッ�
 4.  **自分のサーバーに Bot を招待**
 
     - 左のメニューの「**OAuth2**」→「**URL Generator**」を開く。
+
     - 「**SCOPES**」で「`bot`」にチェックを入れる。
+
     - 「**BOT PERMISSIONS**」で必要な権限（とりあえず`Send Messages`とか`Read Message History`で OK）を選ぶ。
+
     - 下に表示された URL をコピーしてブラウザで開き、テストしたいサーバーに招待しよう。
 
 5.  **`.env`ファイルを作る**
 
     - プロジェクトのフォルダ直下に `.env` という名前のファイルを作る。
+
     - そのファイルの中に、さっきコピーした Bot のトークンを貼り付ける。
 
     <!-- end list -->
