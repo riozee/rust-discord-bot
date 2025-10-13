@@ -42,6 +42,7 @@ cargo build
 git checkout main
 git pull origin main
 
+
 # 新しいブランチを作成（ブランチ名は分かりやすく！）
 git checkout -b feature/〇〇機能の追加
 ```
@@ -81,6 +82,9 @@ PR くれたら誰かが見て、問題なさそうならマージしてボッ�
 
 ## 📝 変更履歴 (Changelog)
 
+- 2025-10-13: スラッシュコマンドに対応。起動時に自動登録（GUILD_ID 設定でギルド即時反映）、各コマンドファイルに説明を定義可能。
+  - 新規コマンドは `<name>.rs` に `NAME`/`DESCRIPTION` と `slash_register`/`slash_run` を実装し、`commands::slash_commands()` に追加すると再起動時に自動登録されます。
+  - `run()` はプレフィックスコマンド用、`slash_run()` はスラッシュコマンド用に分けています。
 - 2025-10-13: コマンドを「1 ファイル = 1 コマンド」の構成にリファクタリングしました。例: `src/commands/ping.rs`, `src/commands/help.rs`。
   - 追加方法（超簡単）: `src/commands/<name>.rs` に `pub async fn run(ctx: &Context, msg: &Message)` を実装 → `src/commands/mod.rs` に `pub mod <name>;` を追加 → `src/main.rs` の `match` に `"<name>" => commands::<name>::run(&ctx, &msg).await` を追加。
 

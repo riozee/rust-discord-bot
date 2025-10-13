@@ -2,7 +2,12 @@ use dotenv::dotenv;
 use std::env;
 
 use serenity::async_trait;
-use serenity::model::channel::Message;
+use serenity::model::{
+    application::{Command, Interaction},
+    channel::Message,
+    gateway::Ready,
+    id::GuildId,
+};
 use serenity::prelude::*;
 
 mod commands;
@@ -11,6 +16,31 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
+    async fn interaction_create(&self, _ctx: Context, interaction: Interaction) {
+        if let Interaction::Command(command) = interaction {
+            let name = command.data.name.as_str();
+            let content = match name {
+                commands::ping::NAME => Some(commands::ping::slash_run(&command.data.options())),
+                commands::help::NAME => Some(commands::help::slash_run(&command.data.options())),
+                _ => Some("未対応のコマンドです".to_string()),
+            };
+
+            if let Some(content) = content
+                && let Err(why) = command
+                    .create_response(
+                        &_ctx.http,
+                        serenity::builder::CreateInteractionResponse::Message(
+                            serenity::builder::CreateInteractionResponseMessage::new()
+                                .content(content),
+                        ),
+                    )
+                    .await
+            {
+                println!("スラッシュコマンドの応答に失敗: {why:?}");
+            }
+        }
+    }
+
     async fn message(&self, ctx: Context, msg: Message) {
         // ループ防止のため、Bot自身および他のBotのメッセージは無視
         if msg.author.bot {
@@ -41,6 +71,30 @@ impl EventHandler for Handler {
 
         if let Err(why) = result {
             println!("コマンド '{}' の実行中にエラーが発生: {:?}", command, why);
+        }
+    }
+
+    async fn ready(&self, ctx: Context, ready: Ready) {
+        println!("{} として接続しました", ready.user.name);
+        // グローバルコマンドとして登録（反映に最大1時間）
+        let cmds = commands::slash_commands();
+        match Command::set_global_commands(&ctx.http, cmds).await {
+            Ok(commands) => println!("登録されたグローバルスラッシュコマンド: {commands:#?}"),
+            Err(why) => println!("スラッシュコマンド登録に失敗: {why:?}"),
+        }
+
+        // 開発用: GUILD_ID が設定されていればギルドコマンドとして即時反映
+        if let Ok(guild_id_str) = std::env::var("GUILD_ID")
+            && let Ok(id) = guild_id_str.parse::<u64>()
+        {
+            let guild_id = GuildId::new(id);
+            match guild_id
+                .set_commands(&ctx.http, commands::slash_commands())
+                .await
+            {
+                Ok(commands) => println!("ギルド({id})のスラッシュコマンド: {commands:#?}"),
+                Err(why) => println!("ギルドへのスラッシュコマンド登録に失敗: {why:?}"),
+            }
         }
     }
 }
