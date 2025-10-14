@@ -1,10 +1,8 @@
 # 🤖 rust-bot 開発のやり方
 
-開発に協力してくれるみんなへ！ 🎉
-
 このドキュメントは、開発の進め方とか、テスト用の Bot を作る方法とかをまとめたものです。
 
----
+-----
 
 ## 🛠️ まずは準備から
 
@@ -12,12 +10,15 @@
 
 まだの人は、 Rust を入れといてね。
 
-### 2\. リポジトリのクローン
+### 2\. リポジトリをフォーク & クローン
 
-まずはこのリポジトリを自分の PC に持ってこよう。
+まず、このリポジトリを **Fork** して、自分の GitHub アカウントにコピーを作ろう。
+
+次に、そのコピーしたリポジトリ（自分のリポジトリ）を PC に持ってくる。
 
 ```bash
-git clone https://github.com/riozee/rust-discord-bot.git
+# 「your-username」の部分は自分の GitHub ユーザー名に書き換えてね！
+git clone https://github.com/your-username/rust-discord-bot.git
 cd rust-discord-bot
 ```
 
@@ -29,36 +30,48 @@ cd rust-discord-bot
 cargo build
 ```
 
----
+-----
 
 ## 💻 開発の基本的な流れ
 
-### 1\. ブランチを作る
+### 1\. 作業場所を最新の状態にする
 
-作業する前に、必ず新しいブランチを作ってね！ `main`ブランチはいつでもちゃんと動く状態にしときたいから、直接いじるのはやめよう 🙅
+作業を始める前に、本家リポジトリの最新の変更を取り込んで、自分のローカル環境を最新にしておこう！
 
 ```bash
-# 最新の状態にする
+# まだ設定してない人だけ：本家リポジトリを 'upstream' として登録する
+git remote add upstream https://github.com/riozee/rust-discord-bot.git
+
+# 本家(upstream)の最新情報を取ってくる
+git fetch upstream
+
+# 自分の main ブランチに移動して、本家の main ブランチの内容をマージする
 git checkout main
-git pull origin main
+git merge upstream/main
+```
 
+### 2\. ブランチを作る
 
+`main` ブランチはいつでもちゃんと動く状態にしときたいから、直接いじるのはやめよう 🙅
+作業する前に、必ず新しいブランチを作ってね！
+
+```bash
 # 新しいブランチを作成（ブランチ名は分かりやすく！）
 git checkout -b feature/〇〇機能の追加
 ```
 
-### 2\. コーディング！
+### 3\. コーディング！
 
 作ったブランチで、自由にコードを書いて機能を追加したり、バグを直したりして OK！
 
-### 3\. 動作テスト（超重要！）
+### 4\. 動作テスト（超重要！）
 
 コードを変えたら、**コミットする前に必ず自分の PC でテストしてね。**
 やり方は一番下に書いてある「**🔧 テスト用の Bot を作る方法**」を見て！
 
-### 4\. コミット & プッシュ
+### 5\. コミット & プッシュ
 
-ちゃんと動くことが確認できたら、変更をコミットして GitHub にプッシュしよう。
+ちゃんと動くことが確認できたら、変更をコミットして **自分のフォークしたリポジトリ** にプッシュしよう。
 
 ```bash
 git add .
@@ -66,29 +79,23 @@ git commit -m "feat: 〇〇機能を追加したよ！" # コミットメッセ�
 git push origin feature/〇〇機能の追加
 ```
 
-### 5\. プルリクエスト (PR) を作成
+### 6\. プルリクエスト (PR) を作成
 
-GitHub で、さっきプッシュしたブランチから`main`ブランチへのプルリクエスト（PR）を作ってね。
+GitHub で、さっきプッシュしたブランチから本家リポジトリの `main` ブランチへのプルリクエスト（PR）を作ってね。
 
 PR のコメントには、こんなことを書くとレビューする人が助かります
 
-- **何を変えたか？**
-- **なんで変えたか？**
-- **（もしあれば）動作確認のスクショや GIF**
+  * **何を変えたか？**
+  * **なんで変えたか？**
+  * **（もしあれば）動作確認のスクショや GIF**
 
 PR くれたら誰かが見て、問題なさそうならマージしてボットを更新するよ！👍
 
----
+### ⭐️ もっと開発したい人へ
 
-## 📝 変更履歴 (Changelog)
+もし、これからもっとたくさん開発に協力してくれる！という人は、毎回フォークするのは大変だと思うので、気軽に声をかけてね！このリポジトリへの書き込み権限を招待します！🎉
 
-- 2025-10-13: スラッシュコマンドに対応。起動時に自動登録（GUILD_ID 設定でギルド即時反映）、各コマンドファイルに説明を定義可能。
-  - 新規コマンドは `<name>.rs` に `NAME`/`DESCRIPTION` と `slash_register`/`slash_run` を実装し、`commands::slash_commands()` に追加すると再起動時に自動登録されます。
-  - `run()` はプレフィックスコマンド用、`slash_run()` はスラッシュコマンド用に分けています。
-- 2025-10-13: コマンドを「1 ファイル = 1 コマンド」の構成にリファクタリングしました。例: `src/commands/ping.rs`, `src/commands/help.rs`。
-  - 追加方法（超簡単）: `src/commands/<name>.rs` に `pub async fn run(ctx: &Context, msg: &Message)` を実装 → `src/commands/mod.rs` に `pub mod <name>;` を追加 → `src/main.rs` の `match` に `"<name>" => commands::<name>::run(&ctx, &msg).await` を追加。
-
----
+-----
 
 ## 🔧 テスト用の Bot を作る方法
 
@@ -96,50 +103,46 @@ PR くれたら誰かが見て、問題なさそうならマージしてボッ�
 
 1.  **Discord Developer Portal を開く**
 
-    - [Discord Developer Portal](https://www.google.com/search?q=https://discord.com/developers/applications) にアクセスして「**New Application**」をクリック。
-    - Bot の名前は適当で OK（例: `test-bot-自分の名前`）。
+      * [Discord Developer Portal](https://discord.com/developers/applications) にアクセスして「**New Application**」をクリック。
+      * Bot の名前は適当で OK（例: `test-bot-自分の名前`）。
 
 2.  **Bot を作ってトークンをコピー**
 
-    - 左のメニューから「**Bot**」タブを選んで「**Add Bot**」をクリック。
+      * 左のメニューから「**Bot**」タブを選んで「**Add Bot**」をクリック。
 
-    - 「**TOKEN**」のところにある「**Reset Token**」か「**View Token**」を押して、表示されたトークンをコピー。**このトークンはパスワードみたいなものだから、絶対に人に教えたり、GitHub に上げたりしちゃダメだよ！** 🤫
+      * 「**TOKEN**」のところにある「**Reset Token**」か「**View Token**」を押して、表示されたトークンをコピー。**このトークンはパスワードみたいなものだから、絶対に人に教えたり、GitHub に上げたりしちゃダメだよ！** 🤫
 
 3.  **メッセージが読めるように設定**
 
-    - 「**Privileged Gateway Intents**」っていう項目の中にある「**MESSAGE CONTENT INTENT**」をオンにする。これを忘れるとメッセージが読めないから注意！
+      * 「**Privileged Gateway Intents**」っていう項目の中にある「**MESSAGE CONTENT INTENT**」をオンにする。これを忘れるとメッセージが読めないから注意！
 
 4.  **自分のサーバーに Bot を招待**
 
-    - 左のメニューの「**OAuth2**」→「**URL Generator**」を開く。
+      * 左のメニューの「**OAuth2**」→「**URL Generator**」を開く。
 
-    - 「**SCOPES**」で「`bot`」にチェックを入れる。
+      * 「**SCOPES**」で「`bot`」にチェックを入れる。
 
-    - 「**BOT PERMISSIONS**」で必要な権限（とりあえず`Send Messages`とか`Read Message History`で OK）を選ぶ。
+      * 「**BOT PERMISSIONS**」で必要な権限（とりあえず`Send Messages`とか`Read Message History`で OK）を選ぶ。
 
-    - 下に表示された URL をコピーしてブラウザで開き、テストしたいサーバーに招待しよう。
+      * 下に表示された URL をコピーしてブラウザで開き、テストしたいサーバーに招待しよう。
 
 5.  **`.env`ファイルを作る**
 
-    - プロジェクトのフォルダ直下に `.env` という名前のファイルを作る。
+      * プロジェクトのフォルダ直下に `.env` という名前のファイルを作る。
 
-    - そのファイルの中に、さっきコピーした Bot のトークンを貼り付ける。
+      * そのファイルの中に、さっきコピーした Bot のトークンを貼り付ける。
 
-    <!-- end list -->
-
-    ```env
-    # .env
-    DISCORD_TOKEN="ここにさっきコピーしたトークンを貼り付け"
-    ```
+        ```env
+        # .env
+        DISCORD_TOKEN="ここにさっきコピーしたトークンを貼り付け"
+        ```
 
 6.  **Bot を起動！**
 
-    - ターミナルで下のコマンドを叩けば、君の PC で Bot が動き出すよ！
+      * ターミナルで下のコマンドを叩けば、君の PC で Bot が動き出すよ！
 
-    <!-- end list -->
+        ```bash
+        cargo run
+        ```
 
-    ```bash
-    cargo run
-    ```
-
-    - サーバーに招待したテスト Bot がちゃんと動くか確認してみよう！
+      * サーバーに招待したテスト Bot がちゃんと動くか確認してみよう！
