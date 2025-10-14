@@ -2,3 +2,4 @@
 .env
 
 /test
+/rrepl_running_env

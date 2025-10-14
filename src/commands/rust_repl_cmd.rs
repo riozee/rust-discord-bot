@@ -16,7 +16,7 @@ pub const DESCRIPTION: &str = "簡易的なRust REPL";
 
 fn get_location() -> Result<PathBuf, std::io::Error> {
     let current = std::env::current_dir()?;
-    let run_loca = current.join("test");
+    let run_loca = current.join("rrepl_running_env");
     Ok(run_loca)
 }
 

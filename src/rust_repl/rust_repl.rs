@@ -62,7 +62,6 @@ impl Display for Error {
 pub struct SrcCode {
     code: String,
     location: PathBuf,
-    // incomplete 👇
     edition: String,
 }
 
@@ -110,7 +109,11 @@ impl CodeRunner for SrcCode {
 // return (project_path, main.rs)
 fn ready_work_env<T: AsRef<str>, P: AsRef<Path>>(path: P, edition: T) -> Result<(PathBuf, PathBuf), Error> {
     if runnable_rust() {
-        init_project_dir(&path)?;
+        // init_project_dir(&path)?;
+        if path.as_ref().exists() {
+            std::fs::remove_dir_all(&path)?;
+        }
+        std::fs::create_dir_all(&path)?;
 
         let src_dir_path = path.as_ref().join("src");
         std::fs::create_dir_all(&src_dir_path)?;
@@ -134,15 +137,10 @@ fn ready_work_env<T: AsRef<str>, P: AsRef<Path>>(path: P, edition: T) -> Result<
 }
 
 fn init_project_dir<P: AsRef<Path>>(path: P) -> Result<(), Error> {
-    // if !path.as_ref().is_dir() {
-    //     Err(Error::PathIsNotDir)
-    // } else
-    if !path.as_ref().exists() {
+    if !path.as_ref().is_dir() {
         std::fs::remove_dir_all(&path)?;
-        Ok(std::fs::create_dir_all(path)?)
-    } else {
-        Ok(std::fs::create_dir_all(path)?)
     }
+    Ok(std::fs::create_dir_all(&path)?)
 }
 
 fn ready_code<T: AsRef<str>>(src: T) -> String {
