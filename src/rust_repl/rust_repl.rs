@@ -36,8 +36,8 @@ pub enum Error {
     Io(std::io::Error),
     NotInstalledCargo,
     FailedRun(String),
-    StrConvert(FromUtf8Error),
-    PathIsNotDir,
+    StrConvert,
+    // PathIsNotDir,
 }
 
 impl From<std::io::Error> for Error {
@@ -47,8 +47,8 @@ impl From<std::io::Error> for Error {
 }
 
 impl From<FromUtf8Error> for Error {
-    fn from(value: FromUtf8Error) -> Self {
-        Self::StrConvert(value)
+    fn from(_value: FromUtf8Error) -> Self {
+        Self::StrConvert
     }
 }
 
@@ -58,8 +58,8 @@ impl Display for Error {
             Error::Io(error) => write!(f, "Io Error: {error}"),
             Error::NotInstalledCargo => write!(f, "not installed Rust run env"),
             Error::FailedRun(e) => write!(f, "failed run {e}"),
-            Error::StrConvert(_) => write!(f, "failed convert to String"),
-            Error::PathIsNotDir => write!(f, "server error: Path isn't Dir"),
+            Error::StrConvert => write!(f, "failed convert to String"),
+            // Error::PathIsNotDir => write!(f, "server error: Path isn't Dir"),
         }
     }
 }
@@ -143,12 +143,12 @@ fn ready_work_env<T: AsRef<str>, P: AsRef<Path>>(path: P, edition: T) -> Result<
     }
 }
 
-fn init_project_dir<P: AsRef<Path>>(path: P) -> Result<(), Error> {
-    if !path.as_ref().is_dir() {
-        std::fs::remove_dir_all(&path)?;
-    }
-    Ok(std::fs::create_dir_all(&path)?)
-}
+// // fn init_project_dir<P: AsRef<Path>>(path: P) -> Result<(), Error> {
+//     if !path.as_ref().is_dir() {
+//         std::fs::remove_dir_all(&path)?;
+//     }
+//     Ok(std::fs::create_dir_all(&path)?)
+// }
 
 fn ready_code<T: AsRef<str>>(src: T) -> String {
     format!("fn main(){{{}}}", src.as_ref())
