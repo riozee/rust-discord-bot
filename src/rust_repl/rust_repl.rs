@@ -11,7 +11,14 @@ version = "0.1.0"
 edition = ""#;
 
 const TOML_END: &str = r#""
-[dependencies]"#;
+[dependencies]
+
+[profile.release]
+opt-level = "z"
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort""#;
 
 
 fn gen_cargo_toml<T: AsRef<str>>(ed: T) -> String {
