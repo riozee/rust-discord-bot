@@ -43,7 +43,11 @@ pub struct SrcCode {
 
 impl SrcCode {
     pub fn new<T: AsRef<str>, P: AsRef<Path>>(code: T, location: P, edition: T) -> Self {
-        Self { code: code.as_ref().to_string(), location: location.as_ref().to_path_buf(), edition: edition.as_ref().to_string() }
+        Self {
+            code: code.as_ref().to_string(),
+            location: location.as_ref().to_path_buf(),
+            edition: edition.as_ref().to_string(),
+        }
     }
 }
 
@@ -62,7 +66,8 @@ impl CodeRunner for SrcCode {
         let formatted_code = ready_code(self.code.clone());
         main_rs.write_all(formatted_code.as_bytes())?;
 
-        let result = std::process::Command::new("cargo run")
+        let result = std::process::Command::new("cargo")
+            .args(["run"])
             .current_dir(pj_mainrs_pathes.0)
             .output()?;
         let result_str = String::from_utf8(result.stdout)?;
@@ -76,6 +81,7 @@ impl CodeRunner for SrcCode {
 }
 
 // ready Rust temporary project folder
+// return (project_path, main.rs)
 fn ready_work_env<T: AsRef<Path>>(path: T) -> Result<(PathBuf, PathBuf), Error> {
     if runnable_rust() {
         init_project_dir(&path)?;
@@ -88,10 +94,14 @@ fn ready_work_env<T: AsRef<Path>>(path: T) -> Result<(PathBuf, PathBuf), Error> 
         std::fs::File::create(&main_rs_path)?;
 
         let cargo_toml_path = path.as_ref().join("Cargo.toml");
-        let mut res = std::fs::OpenOptions::new().create(true).write(true).truncate(true).open(&cargo_toml_path)?;
+        let mut res = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(&cargo_toml_path)?;
         res.write_all(DEFAULT_CARGO_TOML.as_bytes())?;
 
-        Ok((src_dir_path, main_rs_path))
+        Ok((path.as_ref().to_path_buf(), main_rs_path))
     } else {
         Err(Error::NotInstalledCargo)
     }
@@ -109,11 +119,15 @@ fn init_project_dir<P: AsRef<Path>>(path: P) -> Result<(), Error> {
 }
 
 fn ready_code<T: AsRef<str>>(src: T) -> String {
-    format!("fn main()\n{{{}}}", src.as_ref())
+    format!("fn main(){{{}}}", src.as_ref())
 }
 
 pub fn runnable_rust() -> bool {
-    match std::process::Command::new("cargo").status() {
+    match std::process::Command::new("cargo")
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+    {
         Ok(v) => v.success(),
         Err(_) => false,
     }
@@ -126,7 +140,9 @@ mod tests {
     #[test]
     fn test_run() {
         let c_path = std::env::current_dir().unwrap();
-        let src = SrcCode::new(r#"println!("helloworld!");"#, c_path.join("test"), "2024");
+        let f = c_path.join("test");
+        assert!(f.exists());
+        let src = SrcCode::new(r#"println!("helloworld!!!");"#, c_path.join("test"), "2024");
         let result = src.run();
         println!("{result:?}");
     }
