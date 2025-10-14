@@ -24,6 +24,7 @@ impl EventHandler for Handler {
             let content = match name {
                 commands::ping::NAME => Some(commands::ping::slash_run(&command.data.options())),
                 commands::help::NAME => Some(commands::help::slash_run(&command.data.options())),
+                commands::tex::NAME => Some(commands::tex::slash_run(&command.data.options())),
                 _ => Some("未対応のコマンドです".to_string()),
             };
 
@@ -68,6 +69,7 @@ impl EventHandler for Handler {
         let result = match command {
             "ping" => commands::ping::run(&ctx, &msg).await,
             "help" => commands::help::run(&ctx, &msg).await,
+            "tex" => commands::tex::run(&ctx, &msg).await,
             _ => Ok(()), // 不明なコマンドは現状スルー
         };
 
