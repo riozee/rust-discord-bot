@@ -1,4 +1,5 @@
 use std::{
+    fmt::Display,
     io::Write,
     path::{Path, PathBuf},
     string::FromUtf8Error,
@@ -29,6 +30,18 @@ impl From<std::io::Error> for Error {
 impl From<FromUtf8Error> for Error {
     fn from(value: FromUtf8Error) -> Self {
         Self::StrConvert(value)
+    }
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::Io(error) => write!(f, "Io Error: {error}"),
+            Error::NotInstalledCargo => write!(f, "not installed Rust run env"),
+            Error::FailedRun(e) => write!(f, "failed run {e}"),
+            Error::StrConvert(e) => write!(f, "failed convert to String"),
+            Error::PathIsNotDir => write!(f, "server error: Path isn't Dir"),
+        }
     }
 }
 
@@ -71,9 +84,10 @@ impl CodeRunner for SrcCode {
             .current_dir(pj_mainrs_pathes.0)
             .output()?;
         let result_str = String::from_utf8(result.stdout)?;
+        let result_err = String::from_utf8(result.stderr)?;
 
         if !result.status.success() {
-            Err(Error::FailedRun(result_str))
+            Err(Error::FailedRun(result_err))
         } else {
             Ok(result_str)
         }
@@ -108,9 +122,10 @@ fn ready_work_env<T: AsRef<Path>>(path: T) -> Result<(PathBuf, PathBuf), Error> 
 }
 
 fn init_project_dir<P: AsRef<Path>>(path: P) -> Result<(), Error> {
-    if !path.as_ref().is_dir() {
-        Err(Error::PathIsNotDir)
-    } else if !path.as_ref().exists() {
+    // if !path.as_ref().is_dir() {
+    //     Err(Error::PathIsNotDir)
+    // } else
+    if !path.as_ref().exists() {
         std::fs::remove_dir_all(&path)?;
         Ok(std::fs::create_dir_all(path)?)
     } else {
@@ -122,7 +137,7 @@ fn ready_code<T: AsRef<str>>(src: T) -> String {
     format!("fn main(){{{}}}", src.as_ref())
 }
 
-pub fn runnable_rust() -> bool {
+fn runnable_rust() -> bool {
     match std::process::Command::new("cargo")
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())

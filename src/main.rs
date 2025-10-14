@@ -70,6 +70,7 @@ impl EventHandler for Handler {
             "ping" => commands::ping::run(&ctx, &msg).await,
             "help" => commands::help::run(&ctx, &msg).await,
             "tex" => commands::tex::run(&ctx, &msg).await,
+            "rrepl" => commands::rust_repl_cmd::run(&ctx, &msg).await,
             _ => Ok(()), // 不明なコマンドは現状スルー
         };
 

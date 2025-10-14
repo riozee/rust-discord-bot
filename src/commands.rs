@@ -4,6 +4,8 @@ pub mod help;
 pub mod ping;
 pub mod tex;
 
+pub mod rust_repl_cmd;
+
 // プレフィックスはここで設定（後で環境変数などで変更可能）
 pub const PREFIX: &str = "!";
 
@@ -15,5 +17,6 @@ pub fn slash_commands() -> Vec<CreateCommand> {
         ping::slash_register(),
         help::slash_register(),
         tex::slash_register(),
+        rust_repl_cmd::slash_register(),
     ]
 }
