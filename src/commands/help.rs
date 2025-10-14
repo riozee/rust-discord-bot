@@ -7,7 +7,8 @@ use serenity::{
 pub async fn run(ctx: &Context, msg: &Message) -> serenity::Result<()> {
     let help_text = "利用可能なコマンド:\n\
 - !ping: ポン！と返します\n\
-- !help: このヘルプを表示します";
+- !help: このヘルプを表示します\n\
+- !tex <式>: LaTeX を画像で返します";
 
     msg.channel_id.say(&ctx.http, help_text).await?;
     Ok(())
@@ -15,7 +16,7 @@ pub async fn run(ctx: &Context, msg: &Message) -> serenity::Result<()> {
 
 pub fn slash_run(_options: &[ResolvedOption]) -> String {
     // スラッシュ版も同じ内容を返す
-    "利用可能なコマンド:\n- /ping: ポン！と返します\n- /help: このヘルプを表示します".to_string()
+    "利用可能なコマンド:\n- /ping: ポン！と返します\n- /help: このヘルプを表示します\n- /tex formula:<式>: LaTeX を画像で返します".to_string()
 }
 
 // スラッシュコマンド情報
