@@ -8,9 +8,21 @@ use std::{
 const DEFAULT_CARGO_TOML: &str = r#"[package]
 name = "tmp"
 version = "0.1.0"
-edition = "2024"
+edition = ""#;
 
+const TOML_END: &str = r#""
 [dependencies]"#;
+
+
+fn gen_cargo_toml<T: AsRef<str>>(ed: T) -> String {
+    format!("{DEFAULT_CARGO_TOML}{}{TOML_END}", ed.as_ref())
+}
+
+#[test]
+fn test_gen() {
+    let ed = "2024";
+    println!("{}", gen_cargo_toml(ed));
+}
 
 #[derive(Debug)]
 pub enum Error {
@@ -39,7 +51,7 @@ impl Display for Error {
             Error::Io(error) => write!(f, "Io Error: {error}"),
             Error::NotInstalledCargo => write!(f, "not installed Rust run env"),
             Error::FailedRun(e) => write!(f, "failed run {e}"),
-            Error::StrConvert(e) => write!(f, "failed convert to String"),
+            Error::StrConvert(_) => write!(f, "failed convert to String"),
             Error::PathIsNotDir => write!(f, "server error: Path isn't Dir"),
         }
     }
@@ -70,7 +82,7 @@ pub trait CodeRunner {
 
 impl CodeRunner for SrcCode {
     fn run(&self) -> Result<String, Error> {
-        let pj_mainrs_pathes = ready_work_env(&self.location)?;
+        let pj_mainrs_pathes = ready_work_env(&self.location, self.edition.clone())?;
         let mut main_rs = std::fs::OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -96,7 +108,7 @@ impl CodeRunner for SrcCode {
 
 // ready Rust temporary project folder
 // return (project_path, main.rs)
-fn ready_work_env<T: AsRef<Path>>(path: T) -> Result<(PathBuf, PathBuf), Error> {
+fn ready_work_env<T: AsRef<str>, P: AsRef<Path>>(path: P, edition: T) -> Result<(PathBuf, PathBuf), Error> {
     if runnable_rust() {
         init_project_dir(&path)?;
 
@@ -113,7 +125,7 @@ fn ready_work_env<T: AsRef<Path>>(path: T) -> Result<(PathBuf, PathBuf), Error> 
             .write(true)
             .truncate(true)
             .open(&cargo_toml_path)?;
-        res.write_all(DEFAULT_CARGO_TOML.as_bytes())?;
+        res.write_all(gen_cargo_toml(edition).as_bytes())?;
 
         Ok((path.as_ref().to_path_buf(), main_rs_path))
     } else {

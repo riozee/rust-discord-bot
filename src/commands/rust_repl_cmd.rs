@@ -1,9 +1,9 @@
-use std::{path::PathBuf, thread::current};
+use std::path::PathBuf;
 
 use serenity::{
     builder::{CreateCommand, CreateCommandOption},
     model::{
-        application::{CommandOptionType, ResolvedOption, ResolvedValue},
+        application::CommandOptionType,
         channel::Message,
     },
     prelude::Context,
@@ -22,12 +22,6 @@ fn get_location() -> Result<PathBuf, std::io::Error> {
 
 pub async fn run(ctx: &Context, msg: &Message) -> serenity::Result<()> {
     let content = msg.content.trim();
-
-    // let code_block_remover = |x: &str| {
-    //     x.strip_prefix("```")
-    //         .and_then(|s| s.strip_suffix("```"))
-    //         .unwrap_or(x)
-    // };
 
     let code = content
         .strip_prefix(super::PREFIX)
