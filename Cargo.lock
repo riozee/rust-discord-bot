@@ -1459,9 +1459,13 @@ name = "rust-discord-bot"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "once_cell",
  "reqwest 0.12.24",
+ "serde_json",
  "serenity",
+ "tempfile",
  "tokio",
+ "url",
  "urlencoding",
 ]
 
