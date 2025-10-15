@@ -7,6 +7,7 @@ use serenity::{
     prelude::Context,
 };
 
+use std::process::Stdio;
 use tokio::process::Command;
 
 const MAX_MESSAGE_SIZE: usize = 1900; // safety margin for code blocks
@@ -20,12 +21,24 @@ async fn run_tgpt(query: &str, preprompt: &str) -> Result<Vec<u8>, String> {
     // Run: tgpt --quiet --preprompt <preprompt> "query"
     let mut cmd = Command::new("tgpt");
     cmd.arg("--quiet")
+        .arg("--whole")
         .arg("--preprompt")
         .arg(preprompt)
-        .arg(query);
+        .arg(query)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
 
-    // Apply timeout to avoid hanging
-    match tokio::time::timeout(std::time::Duration::from_secs(TIMEOUT_SECS), cmd.output()).await {
+    let child = cmd
+        .spawn()
+        .map_err(|e| format!("コマンド起動エラー: {}", e))?;
+
+    // Apply timeout to avoid hanging; wait_with_output will read stdout/stderr to completion.
+    match tokio::time::timeout(
+        std::time::Duration::from_secs(TIMEOUT_SECS),
+        child.wait_with_output(),
+    )
+    .await
+    {
         Err(_) => Err(format!("タイムアウトしました ({}秒)", TIMEOUT_SECS)),
         Ok(Err(e)) => Err(format!("コマンド実行エラー: {}", e)),
         Ok(Ok(output)) => {
