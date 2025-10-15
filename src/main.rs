@@ -65,6 +65,11 @@ impl EventHandler for Handler {
                         println!("スラッシュコマンドの応答に失敗: {why:?}");
                     }
                 }
+                commands::gpt::NAME => {
+                    if let Err(why) = commands::gpt::slash_execute(&_ctx, &command).await {
+                        println!("/gpt 実行エラー: {why:?}");
+                    }
+                }
                 commands::get::NAME => {
                     if let Err(why) = commands::get::slash_execute(&_ctx, &command).await {
                         println!("/get 実行エラー: {why:?}");
@@ -119,6 +124,7 @@ impl EventHandler for Handler {
             "ping" => commands::ping::run(&ctx, &msg).await,
             "help" => commands::help::run(&ctx, &msg).await,
             "tex" => commands::tex::run(&ctx, &msg).await,
+            "gpt" => commands::gpt::run(&ctx, &msg).await,
             "get" => commands::get::run(&ctx, &msg).await,
             "post" => commands::post::run(&ctx, &msg).await,
             _ => Ok(()), // 不明なコマンドは現状スルー

@@ -1,6 +1,7 @@
 // コマンド用モジュール: 各コマンドのハンドラと共通項目を公開
 
 pub mod get;
+pub mod gpt;
 pub mod help;
 pub mod ping;
 pub mod post;
@@ -19,5 +20,6 @@ pub fn slash_commands() -> Vec<CreateCommand> {
         tex::slash_register(),
         get::slash_register(),
         post::slash_register(),
+        gpt::slash_register(),
     ]
 }
