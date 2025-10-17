@@ -19,25 +19,81 @@ impl EventHandler for Handler {
     async fn interaction_create(&self, _ctx: Context, interaction: Interaction) {
         if let Interaction::Command(command) = interaction {
             let name = command.data.name.as_str();
-            let content = match name {
-                commands::ping::NAME => Some(commands::ping::slash_run(&command.data.options())),
-                commands::help::NAME => Some(commands::help::slash_run(&command.data.options())),
-                commands::tex::NAME => Some(commands::tex::slash_run(&command.data.options())),
-                _ => Some("未対応のコマンドです".to_string()),
-            };
-
-            if let Some(content) = content
-                && let Err(why) = command
-                    .create_response(
-                        &_ctx.http,
-                        serenity::builder::CreateInteractionResponse::Message(
-                            serenity::builder::CreateInteractionResponseMessage::new()
-                                .content(content),
-                        ),
-                    )
-                    .await
-            {
-                println!("スラッシュコマンドの応答に失敗: {why:?}");
+            match name {
+                commands::ping::NAME => {
+                    let content = commands::ping::slash_run(&command.data.options());
+                    if let Err(why) = command
+                        .create_response(
+                            &_ctx.http,
+                            serenity::builder::CreateInteractionResponse::Message(
+                                serenity::builder::CreateInteractionResponseMessage::new()
+                                    .content(content),
+                            ),
+                        )
+                        .await
+                    {
+                        println!("スラッシュコマンドの応答に失敗: {why:?}");
+                    }
+                }
+                commands::help::NAME => {
+                    let content = commands::help::slash_run(&command.data.options());
+                    if let Err(why) = command
+                        .create_response(
+                            &_ctx.http,
+                            serenity::builder::CreateInteractionResponse::Message(
+                                serenity::builder::CreateInteractionResponseMessage::new()
+                                    .content(content),
+                            ),
+                        )
+                        .await
+                    {
+                        println!("スラッシュコマンドの応答に失敗: {why:?}");
+                    }
+                }
+                commands::tex::NAME => {
+                    let content = commands::tex::slash_run(&command.data.options());
+                    if let Err(why) = command
+                        .create_response(
+                            &_ctx.http,
+                            serenity::builder::CreateInteractionResponse::Message(
+                                serenity::builder::CreateInteractionResponseMessage::new()
+                                    .content(content),
+                            ),
+                        )
+                        .await
+                    {
+                        println!("スラッシュコマンドの応答に失敗: {why:?}");
+                    }
+                }
+                commands::gpt::NAME => {
+                    if let Err(why) = commands::gpt::slash_execute(&_ctx, &command).await {
+                        println!("/gpt 実行エラー: {why:?}");
+                    }
+                }
+                commands::get::NAME => {
+                    if let Err(why) = commands::get::slash_execute(&_ctx, &command).await {
+                        println!("/get 実行エラー: {why:?}");
+                    }
+                }
+                commands::post::NAME => {
+                    if let Err(why) = commands::post::slash_execute(&_ctx, &command).await {
+                        println!("/post 実行エラー: {why:?}");
+                    }
+                }
+                _ => {
+                    if let Err(why) = command
+                        .create_response(
+                            &_ctx.http,
+                            serenity::builder::CreateInteractionResponse::Message(
+                                serenity::builder::CreateInteractionResponseMessage::new()
+                                    .content("未対応のコマンドです"),
+                            ),
+                        )
+                        .await
+                    {
+                        println!("スラッシュコマンドの応答に失敗: {why:?}");
+                    }
+                }
             }
         }
     }
@@ -69,6 +125,9 @@ impl EventHandler for Handler {
             "help" => commands::help::run(&ctx, &msg).await,
             "tex" => commands::tex::run(&ctx, &msg).await,
             "rrepl" => commands::rust_repl_cmd::run(&ctx, &msg).await,
+            "gpt" => commands::gpt::run(&ctx, &msg).await,
+            "get" => commands::get::run(&ctx, &msg).await,
+            "post" => commands::post::run(&ctx, &msg).await,
             _ => Ok(()), // 不明なコマンドは現状スルー
         };
 

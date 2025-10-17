@@ -1,7 +1,10 @@
 // コマンド用モジュール: 各コマンドのハンドラと共通項目を公開
 
+pub mod get;
+pub mod gpt;
 pub mod help;
 pub mod ping;
+pub mod post;
 pub mod tex;
 
 pub mod rust_repl_cmd;
@@ -18,5 +21,8 @@ pub fn slash_commands() -> Vec<CreateCommand> {
         help::slash_register(),
         tex::slash_register(),
         rust_repl_cmd::slash_register(),
+        get::slash_register(),
+        post::slash_register(),
+        gpt::slash_register(),
     ]
 }
