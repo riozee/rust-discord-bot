@@ -12,8 +12,6 @@ use serenity::prelude::*;
 
 mod commands;
 
-mod rust_repl;
-
 struct Handler;
 
 #[async_trait]
