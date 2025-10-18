@@ -80,6 +80,11 @@ impl EventHandler for Handler {
                         println!("/post 実行エラー: {why:?}");
                     }
                 }
+                commands::eval::NAME => {
+                    if let Err(why) = commands::eval::slash_execute(&_ctx, &command).await {
+                        println!("/eval 実行エラー: {why:?}");
+                    }
+                }
                 _ => {
                     if let Err(why) = command
                         .create_response(
@@ -124,6 +129,7 @@ impl EventHandler for Handler {
             "ping" => commands::ping::run(&ctx, &msg).await,
             "help" => commands::help::run(&ctx, &msg).await,
             "tex" => commands::tex::run(&ctx, &msg).await,
+            "rrepl" => commands::rust_repl_cmd::run(&ctx, &msg).await,
             "gpt" => commands::gpt::run(&ctx, &msg).await,
             "get" => commands::get::run(&ctx, &msg).await,
             "post" => commands::post::run(&ctx, &msg).await,

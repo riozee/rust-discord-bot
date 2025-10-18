@@ -1,2 +1,6 @@
 /target
 .env
+
+/test
+/rrepl_running_env
+.DS_Store
