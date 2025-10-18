@@ -11,6 +11,17 @@ use std::{collections::HashMap, fmt::Display};
 pub const NAME: &str = "eval";
 pub const DESCRIPTION: &str = "REPL";
 
+pub fn slash_register() -> CreateCommand {
+    CreateCommand::new(NAME)
+        .description(DESCRIPTION)
+        .add_option(
+            CreateCommandOption::new(CommandOptionType::String, "code", DESCRIPTION).required(true),
+        )
+        .add_option(
+            CreateCommandOption::new(CommandOptionType::String, "lang", "language").required(true),
+        )
+}
+
 pub async fn slash_execute(
     ctx: &Context,
     command: &serenity::model::application::CommandInteraction,
@@ -118,14 +129,16 @@ async fn run_with_api(req_info: ReqJson) -> Result<String, reqwest::Error> {
     Ok(format!("{res}"))
 }
 
+/// レスポンスのデシアライズ用のstruct
+/// 多言語対応のため必要なフィールドだけ実装
 #[derive(Debug, Serialize, Deserialize)]
 struct Resp {
     language: String,
     version: String,
     run: Run,
-    // compile: Compile,
 }
 
+/// 結果表示用。このままmsgに流してる
 impl Display for Resp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -144,22 +157,7 @@ struct Run {
     output: String,
 }
 
-// #[derive(Debug, Serialize, Deserialize)]
-// struct Compile {
-//     stdout: String,
-// }
-
-pub fn slash_register() -> CreateCommand {
-    CreateCommand::new(NAME)
-        .description(DESCRIPTION)
-        .add_option(
-            CreateCommandOption::new(CommandOptionType::String, "code", DESCRIPTION).required(true),
-        )
-        .add_option(
-            CreateCommandOption::new(CommandOptionType::String, "lang", "language").required(true),
-        )
-}
-
+/// apiリクエスト用
 #[derive(Debug, Serialize, Deserialize)]
 struct ReqJson {
     language: String,
@@ -168,6 +166,7 @@ struct ReqJson {
 }
 
 impl ReqJson {
+    /// lang引数はLang struct。Lang structはversion情報を含む
     fn new(lang: &Lang, code: String) -> Self {
         Self {
             language: lang.language.clone(),
@@ -187,12 +186,13 @@ impl FileContent {
     fn new<T: AsRef<str>>(lang: &Lang, code: T) -> Self {
         let code = code.as_ref().to_string();
         Self {
-            name: format!("main.{}", lang_to_extension(&lang)),
+            name: format!("main.{}", lang_to_extension(lang)),
             content: code_generator(code, lang),
         }
     }
 }
 
+/// 言語名から拡張子を生成
 fn lang_to_extension(lang: &Lang) -> String {
     let lang = lang.language.clone();
     // 言語 → 拡張子 のテーブル
@@ -220,16 +220,18 @@ fn lang_to_extension(lang: &Lang) -> String {
         .to_string()
 }
 
+/// main() {}が必要かどうか
 fn reqire_main(lang: &Lang) -> bool {
-    match lang.language.to_lowercase().as_str() {
-        "rust" | "c++" | "c" | "go" | "java" => true,
-        _ => false,
-    }
+    matches!(
+        lang.language.to_lowercase().as_str(),
+        "rust" | "c++" | "c" | "go" | "java"
+    )
 }
 
+/// `reqire_main()`によってmain(){}などを追加して実行可能なコードを生成
 fn code_generator<T: AsRef<str>>(code: T, lang: &Lang) -> String {
     let code = code.as_ref().to_string();
-    if reqire_main(&lang) {
+    if reqire_main(lang) {
         let lang_name = lang.language.clone();
         match lang_name.as_str() {
             "rust" => format!("fn main() {{{code}}}"),
@@ -242,6 +244,8 @@ fn code_generator<T: AsRef<str>>(code: T, lang: &Lang) -> String {
     }
 }
 
+/// api対応言語を取得。
+/// TODO: キャッシュ用に24h程度の期限で外部保存できるようにする
 #[derive(Debug, Serialize, Deserialize)]
 struct Languages(Vec<Lang>);
 
@@ -264,7 +268,6 @@ impl Languages {
 struct Lang {
     language: String,
     version: String,
-    // alias: Vec<String>,
 }
 
 // struct Cache {
@@ -304,13 +307,3 @@ struct Lang {
 //         }
 //     }
 // }
-
-#[test]
-fn test_get_lst() {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    let res = rt.block_on(async {
-        let res = Languages::get_from_api().await.unwrap();
-        res
-    });
-    println!("{res:?}");
-}
