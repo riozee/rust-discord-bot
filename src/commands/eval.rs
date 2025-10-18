@@ -29,8 +29,8 @@ pub fn slash_register() -> CreateCommand {
                 .add_string_choice("TypeScript", "typescript")
                 .add_string_choice("Go", "go")
                 .add_string_choice("Ruby", "ruby")
-                .add_string_choice("Html", "html")
-                .add_string_choice("Css", "css")
+                // .add_string_choice("html", "html")
+                // .add_string_choice("css", "css")
                 .add_string_choice("shell", "shell"),
         )
 }
@@ -251,9 +251,10 @@ fn code_generator<T: AsRef<str>>(code: T, lang: &Lang) -> String {
             "rust" => format!("fn main() {{{code}}}"),
             "c" | "c++" => format!("int main() {{{code}}}"),
             "go" => format!("func main() {{{code}}}"),
-            _ => format!("public static void main(String[ args]) {{{code}}}"),
+            _ => format!("public class Main {{public static void main(String[] args) {{{code}}}}}"),
         }
     } else {
+        println!("{code}");
         code
     }
 }
