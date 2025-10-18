@@ -5,7 +5,7 @@ use serenity::{
     model::{application::CommandOptionType, channel::Message},
     prelude::Context,
 };
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 // use crate::rust_repl::rust_repl::{self, CodeRunner};
 
@@ -64,9 +64,9 @@ struct ReqJson {
 impl ReqJson {
     fn new(lang: String, code: String) -> Self {
         Self {
-            language: lang,
+            language: lang.clone(),
             version: "1.68.2".to_string(),
-            files: vec![FileContent::new(code)],
+            files: vec![FileContent::new(lang, code)],
         }
     }
 }
@@ -77,11 +77,37 @@ struct FileContent {
     content: String,
 }
 
+fn lang_to_extension<T: AsRef<str>>(lang: T) -> String {
+    // 言語 → 拡張子 のテーブル
+    let table: HashMap<&str, &str> = [
+        ("rust", "rs"),
+        ("python", "py"),
+        ("c++", "cpp"),
+        ("c", "c"),
+        ("java", "java"),
+        ("javascript", "js"),
+        ("typescript", "ts"),
+        ("go", "go"),
+        ("ruby", "rb"),
+        ("html", "html"),
+        ("css", "css"),
+        ("shell", "sh"),
+    ]
+    .iter()
+    .cloned()
+    .collect();
+
+    table
+        .get(lang.as_ref().to_lowercase().as_str())
+        .unwrap_or(&"rs")
+        .to_string()
+}
+
 impl FileContent {
-    fn new<T: AsRef<str>>(code: T) -> Self {
+    fn new<T: AsRef<str>>(lang: T, code: T) -> Self {
         let code = code.as_ref().to_string();
         Self {
-            name: "main.rs".to_string(),
+            name: format!("main.{}", lang_to_extension(lang)),
             content: format!("fn main() {{{code}}}"),
         }
     }
@@ -121,6 +147,7 @@ struct Compile {
 pub async fn call_api<T: AsRef<str>>(lang: T, code: T) -> Result<String, reqwest::Error> {
     let client = reqwest::Client::new();
     let req_info = ReqJson::new(lang.as_ref().to_string(), code.as_ref().to_string());
+    println!("{:?}", &req_info);
     let res = client
         .post("https://emkc.org/api/v2/piston/execute")
         .json(&req_info)
@@ -155,7 +182,7 @@ Hello worold!
     #[test]
     fn test_emb_code() {
         let code = r#"println!("Hello worold!");"#;
-        let genf = FileContent::new(code);
+        let genf = FileContent::new("rust", code);
         assert_eq!(genf.content, "fn main() {println!(\"Hello worold!\");}");
     }
 

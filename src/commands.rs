@@ -7,6 +7,7 @@ pub mod ping;
 pub mod post;
 pub mod tex;
 
+pub mod eval;
 pub mod rust_repl_cmd;
 
 // プレフィックスはここで設定（後で環境変数などで変更可能）
@@ -24,5 +25,6 @@ pub fn slash_commands() -> Vec<CreateCommand> {
         get::slash_register(),
         post::slash_register(),
         gpt::slash_register(),
+        eval::slash_register(),
     ]
 }

@@ -80,6 +80,11 @@ impl EventHandler for Handler {
                         println!("/post 実行エラー: {why:?}");
                     }
                 }
+                commands::eval::NAME => {
+                    if let Err(why) = commands::eval::slash_execute(&_ctx, &command).await {
+                        println!("/eval 実行エラー: {why:?}");
+                    }
+                }
                 _ => {
                     if let Err(why) = command
                         .create_response(

@@ -1,0 +1,316 @@
+use reqwest;
+use serde::{Deserialize, Serialize};
+use serenity::{
+    all::CommandDataOptionValue,
+    builder::{CreateCommand, CreateCommandOption},
+    model::application::CommandOptionType,
+    prelude::Context,
+};
+use std::{collections::HashMap, fmt::Display};
+
+pub const NAME: &str = "eval";
+pub const DESCRIPTION: &str = "REPL";
+
+pub async fn slash_execute(
+    ctx: &Context,
+    command: &serenity::model::application::CommandInteraction,
+) -> serenity::Result<()> {
+    command.defer(&ctx.http).await?;
+    // required(true)のためunwrap
+    let code_opt = command
+        .data
+        .options
+        .iter()
+        .find(|opt| opt.name == "code")
+        .unwrap();
+    let lang_opt = command
+        .data
+        .options
+        .iter()
+        .find(|opt| opt.name == "lang")
+        .unwrap();
+
+    let code = if let CommandDataOptionValue::String(code_val) = code_opt.value.clone() {
+        code_val
+    } else {
+        command
+            .edit_response(
+                &ctx,
+                serenity::builder::EditInteractionResponse::new().content("コードが不正です。"),
+            )
+            .await?;
+        return Ok(());
+    };
+    let lang = if let CommandDataOptionValue::String(lang_val) = lang_opt.value.clone() {
+        lang_val
+    } else {
+        command
+            .edit_response(
+                &ctx,
+                serenity::builder::EditInteractionResponse::new().content("言語が不正です。"),
+            )
+            .await?;
+        return Ok(());
+    };
+
+    let langs = match Languages::get_from_api().await {
+        Ok(l) => l,
+        Err(_) => {
+            command
+                .edit_response(
+                    &ctx,
+                    serenity::builder::EditInteractionResponse::new()
+                        .content("言語リストの取得に失敗しました。"),
+                )
+                .await?;
+            return Ok(());
+        }
+    };
+    let lang = match langs.get(&lang) {
+        Some(l) => l,
+        None => {
+            command
+                .edit_response(
+                    &ctx,
+                    serenity::builder::EditInteractionResponse::new().content("非対応の言語です。"),
+                )
+                .await?;
+            return Ok(());
+        }
+    };
+
+    let req_info = ReqJson::new(lang, code);
+    println!("{req_info:?}");
+    let res = match run_with_api(req_info).await {
+        Ok(r) => r,
+        Err(_) => {
+            command
+                .edit_response(
+                    &ctx,
+                    serenity::builder::EditInteractionResponse::new()
+                        .content("実行に失敗しました。"),
+                )
+                .await?;
+            return Ok(());
+        }
+    };
+
+    command
+        .edit_response(
+            &ctx,
+            serenity::builder::EditInteractionResponse::new().content(format!("{res}")),
+        )
+        .await?;
+
+    // command.edit_response(cache_http, builder)
+
+    Ok(())
+}
+
+async fn run_with_api(req_info: ReqJson) -> Result<String, reqwest::Error> {
+    let client = reqwest::Client::new();
+    let res = client
+        .post("https://emkc.org/api/v2/piston/execute")
+        .json(&req_info)
+        .send()
+        .await?;
+    let res = res.json::<Resp>().await?;
+    Ok(format!("{res}"))
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Resp {
+    language: String,
+    version: String,
+    run: Run,
+    // compile: Compile,
+}
+
+impl Display for Resp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "lang: {}\nversion: {}\nresult:\n```bash\n{}```",
+            self.language, self.version, self.run.output
+        )
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Run {
+    stdout: String,
+    stderr: String,
+    code: i32,
+    output: String,
+}
+
+// #[derive(Debug, Serialize, Deserialize)]
+// struct Compile {
+//     stdout: String,
+// }
+
+pub fn slash_register() -> CreateCommand {
+    CreateCommand::new(NAME)
+        .description(DESCRIPTION)
+        .add_option(
+            CreateCommandOption::new(CommandOptionType::String, "code", DESCRIPTION).required(true),
+        )
+        .add_option(
+            CreateCommandOption::new(CommandOptionType::String, "lang", "language").required(true),
+        )
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ReqJson {
+    language: String,
+    version: String,
+    files: Vec<FileContent>,
+}
+
+impl ReqJson {
+    fn new(lang: &Lang, code: String) -> Self {
+        Self {
+            language: lang.language.clone(),
+            version: lang.version.clone(),
+            files: vec![FileContent::new(lang, code)],
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FileContent {
+    name: String,
+    content: String,
+}
+
+impl FileContent {
+    fn new<T: AsRef<str>>(lang: &Lang, code: T) -> Self {
+        let code = code.as_ref().to_string();
+        Self {
+            name: format!("main.{}", lang_to_extension(&lang)),
+            content: code_generator(code, lang),
+        }
+    }
+}
+
+fn lang_to_extension(lang: &Lang) -> String {
+    let lang = lang.language.clone();
+    // 言語 → 拡張子 のテーブル
+    let table: HashMap<&str, &str> = [
+        ("rust", "rs"),
+        ("python", "py"),
+        ("c++", "cpp"),
+        ("c", "c"),
+        ("java", "java"),
+        ("javascript", "js"),
+        ("typescript", "ts"),
+        ("go", "go"),
+        ("ruby", "rb"),
+        ("html", "html"),
+        ("css", "css"),
+        ("shell", "sh"),
+    ]
+    .iter()
+    .cloned()
+    .collect();
+
+    table
+        .get(lang.to_lowercase().as_str())
+        .unwrap_or(&"rs")
+        .to_string()
+}
+
+fn reqire_main(lang: &Lang) -> bool {
+    match lang.language.to_lowercase().as_str() {
+        "rust" | "c++" | "c" | "go" | "java" => true,
+        _ => false,
+    }
+}
+
+fn code_generator<T: AsRef<str>>(code: T, lang: &Lang) -> String {
+    let code = code.as_ref().to_string();
+    if reqire_main(&lang) {
+        let lang_name = lang.language.clone();
+        match lang_name.as_str() {
+            "rust" => format!("fn main() {{{code}}}"),
+            "c" | "c++" => format!("int main() {{{code}}}"),
+            "go" => format!("func main() {{{code}}}"),
+            _ => format!("public static void main(String[ args]) {{{code}}}"),
+        }
+    } else {
+        code
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Languages(Vec<Lang>);
+
+impl Languages {
+    pub async fn get_from_api() -> Result<Self, reqwest::Error> {
+        let client = reqwest::Client::new();
+        let res = client
+            .get("https://emkc.org/api/v2/piston/runtimes")
+            .send()
+            .await?;
+        Ok(Self(res.json::<Vec<Lang>>().await?))
+    }
+
+    fn get<T: AsRef<str>>(&self, lang: T) -> Option<&Lang> {
+        self.0.iter().find(|s| s.language == lang.as_ref())
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Lang {
+    language: String,
+    version: String,
+    // alias: Vec<String>,
+}
+
+// struct Cache {
+//     time_stamp: chrono::DateTime<chrono::Utc>,
+//     content: Languages,
+// }
+
+// impl Cache {
+//     async fn new() -> Result<Self, reqwest::Error> {
+//         Ok(Self {
+//             time_stamp: chrono::Utc::now(),
+//             content: Languages::get_from_api().await?,
+//         })
+//     }
+//     fn is_cache_outdated(&self) -> bool {
+//         let now = chrono::Utc::now();
+//         let elapsed = now - self.time_stamp;
+//         elapsed > chrono::Duration::hours(24)
+//     }
+//     fn get_about_lang<T: AsRef<str>>(&self, lang: T) -> Option<&Lang> {
+//         // 本当はHashMapにした方が検索時間が減るが、apiはリストを返すので変換が不便
+//         // また要素数は極めて限定的なため検索時間におけるオーバーヘッドは無視できるはす
+//         self.content
+//             .0
+//             .iter()
+//             .find(|s| s.language == lang.as_ref().to_string())
+//     }
+//     async fn update(&mut self) -> Result<(), reqwest::Error> {
+//         let lst = Languages::get_from_api().await?;
+//         self.time_stamp = chrono::Utc::now();
+//         self.content = lst;
+//         Ok(())
+//     }
+//     fn check(&mut self) {
+//         if self.is_cache_outdated() {
+//             self.update();
+//         }
+//     }
+// }
+
+#[test]
+fn test_get_lst() {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let res = rt.block_on(async {
+        let res = Languages::get_from_api().await.unwrap();
+        res
+    });
+    println!("{res:?}");
+}
