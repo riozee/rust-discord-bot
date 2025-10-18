@@ -110,6 +110,7 @@ pub async fn slash_execute(
     };
 
     let req_info = ReqJson::new(lang, code.clone());
+    let ccc = req_info.get_gen_code();
     println!("{req_info:?}");
     let res = match run_with_api(req_info).await {
         Ok(r) => r,
@@ -129,7 +130,7 @@ pub async fn slash_execute(
         .edit_response(
             &ctx,
             serenity::builder::EditInteractionResponse::new()
-                .content(format!("```{}\n{code}\n```\n{res}", lang.language)),
+                .content(format!("```{}\n{ccc}\n```\n{res}", lang.language)),
         )
         .await?;
 
@@ -193,6 +194,10 @@ impl ReqJson {
             version: lang.version.clone(),
             files: vec![FileContent::new(lang, code)],
         }
+    }
+
+    fn get_gen_code(&self) -> String {
+        self.files[0].content.clone()
     }
 }
 
@@ -269,7 +274,7 @@ fn code_generator<T: AsRef<str>>(code: T, lang: &Lang) -> String {
                 format!("public class Main {{public static void main(String[] args) {{{code}}}}}")
             }
             // for zig
-            _ => format!("pub fn main() void {{{code}}}"),
+            _ => format!("const std = @import(\"std\");\npub fn main() void {{{code}}}"),
         }
     } else {
         println!("{code}");
