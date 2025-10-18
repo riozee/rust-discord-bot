@@ -29,9 +29,7 @@ pub fn slash_register() -> CreateCommand {
                 .add_string_choice("TypeScript", "typescript")
                 .add_string_choice("Go", "go")
                 .add_string_choice("Ruby", "ruby")
-                // .add_string_choice("html", "html")
-                // .add_string_choice("css", "css")
-                .add_string_choice("shell", "shell"),
+                .add_string_choice("bash", "bash"),
         )
 }
 
@@ -222,7 +220,7 @@ fn lang_to_extension(lang: &Lang) -> String {
         ("ruby", "rb"),
         ("html", "html"),
         ("css", "css"),
-        ("shell", "sh"),
+        ("bash", "bash"),
     ]
     .iter()
     .cloned()
