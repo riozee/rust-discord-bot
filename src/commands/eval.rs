@@ -164,7 +164,7 @@ impl Display for Resp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "lang: {}\nversion: {}\nresult:\n```bash\n{}```",
+            "lang: {}\nversion: {}\nresult:\n```\n{}```",
             self.language, self.version, self.run.output
         )
     }
