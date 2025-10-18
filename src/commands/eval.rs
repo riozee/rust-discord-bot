@@ -29,9 +29,15 @@ pub fn slash_register() -> CreateCommand {
                 .add_string_choice("TypeScript", "typescript")
                 .add_string_choice("Go", "go")
                 .add_string_choice("Ruby", "ruby")
-                .add_string_choice("Html", "html")
-                .add_string_choice("Css", "css")
-                .add_string_choice("shell", "shell"),
+                .add_string_choice("bash", "bash")
+                .add_string_choice("haskell", "haskell")
+                .add_string_choice("lisp", "lisp")
+                .add_string_choice("ocaml", "ocaml")
+                .add_string_choice("prolog", "prolog")
+                .add_string_choice("zig", "zig")
+                .add_string_choice("swift", "swift")
+                .add_string_choice("scala", "scala")
+                .add_string_choice("nim", "nim"),
         )
 }
 
@@ -104,6 +110,7 @@ pub async fn slash_execute(
     };
 
     let req_info = ReqJson::new(lang, code.clone());
+    let ccc = req_info.get_gen_code();
     println!("{req_info:?}");
     let res = match run_with_api(req_info).await {
         Ok(r) => r,
@@ -123,7 +130,7 @@ pub async fn slash_execute(
         .edit_response(
             &ctx,
             serenity::builder::EditInteractionResponse::new()
-                .content(format!("```{}\n{code}\n```\n{res}", lang.language)),
+                .content(format!("```{}\n{ccc}\n```\n{res}", lang.language)),
         )
         .await?;
 
@@ -188,6 +195,10 @@ impl ReqJson {
             files: vec![FileContent::new(lang, code)],
         }
     }
+
+    fn get_gen_code(&self) -> String {
+        self.files[0].content.clone()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -222,7 +233,15 @@ fn lang_to_extension(lang: &Lang) -> String {
         ("ruby", "rb"),
         ("html", "html"),
         ("css", "css"),
-        ("shell", "sh"),
+        ("bash", "bash"),
+        ("haskell", "hs"),
+        ("lisp", "lisp"),
+        ("ocaml", "ml"),
+        ("prolog", "pl"),
+        ("zig", "zig"),
+        ("swift", "swift"),
+        ("scala", "sc"),
+        ("nim", "nim"),
     ]
     .iter()
     .cloned()
@@ -238,7 +257,7 @@ fn lang_to_extension(lang: &Lang) -> String {
 fn reqire_main(lang: &Lang) -> bool {
     matches!(
         lang.language.to_lowercase().as_str(),
-        "rust" | "c++" | "c" | "go" | "java"
+        "rust" | "c++" | "c" | "go" | "java" | "zig"
     )
 }
 
@@ -251,9 +270,14 @@ fn code_generator<T: AsRef<str>>(code: T, lang: &Lang) -> String {
             "rust" => format!("fn main() {{{code}}}"),
             "c" | "c++" => format!("int main() {{{code}}}"),
             "go" => format!("func main() {{{code}}}"),
-            _ => format!("public static void main(String[ args]) {{{code}}}"),
+            "java" => {
+                format!("public class Main {{public static void main(String[] args) {{{code}}}}}")
+            }
+            // for zig
+            _ => format!("const std = @import(\"std\");\npub fn main() void {{{code}}}"),
         }
     } else {
+        println!("{code}");
         code
     }
 }
