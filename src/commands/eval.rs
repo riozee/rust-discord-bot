@@ -18,7 +18,20 @@ pub fn slash_register() -> CreateCommand {
             CreateCommandOption::new(CommandOptionType::String, "code", DESCRIPTION).required(true),
         )
         .add_option(
-            CreateCommandOption::new(CommandOptionType::String, "lang", "language").required(true),
+            CreateCommandOption::new(CommandOptionType::String, "lang", "language")
+                .required(true)
+                .add_string_choice("Rust", "rust")
+                .add_string_choice("Python", "python")
+                .add_string_choice("C", "c")
+                .add_string_choice("C++", "cpp")
+                .add_string_choice("Jave", "java")
+                .add_string_choice("JavaScript", "javascript")
+                .add_string_choice("TypeScript", "typescript")
+                .add_string_choice("Go", "go")
+                .add_string_choice("Ruby", "ruby")
+                .add_string_choice("Html", "html")
+                .add_string_choice("Css", "css")
+                .add_string_choice("shell", "shell"),
         )
 }
 
@@ -90,7 +103,7 @@ pub async fn slash_execute(
         }
     };
 
-    let req_info = ReqJson::new(lang, code);
+    let req_info = ReqJson::new(lang, code.clone());
     println!("{req_info:?}");
     let res = match run_with_api(req_info).await {
         Ok(r) => r,
@@ -109,7 +122,8 @@ pub async fn slash_execute(
     command
         .edit_response(
             &ctx,
-            serenity::builder::EditInteractionResponse::new().content(format!("{res}")),
+            serenity::builder::EditInteractionResponse::new()
+                .content(format!("```{}\n{code}\n```\n{res}", lang.language)),
         )
         .await?;
 
