@@ -29,7 +29,12 @@ pub fn slash_register() -> CreateCommand {
                 .add_string_choice("TypeScript", "typescript")
                 .add_string_choice("Go", "go")
                 .add_string_choice("Ruby", "ruby")
-                .add_string_choice("bash", "bash"),
+                .add_string_choice("bash", "bash")
+                .add_string_choice("haskell", "haskell")
+                .add_string_choice("lisp", "lisp")
+                .add_string_choice("ocaml", "ocaml")
+                .add_string_choice("prolog", "prolog")
+                .add_string_choice("zig", "zig"),
         )
 }
 
@@ -221,6 +226,11 @@ fn lang_to_extension(lang: &Lang) -> String {
         ("html", "html"),
         ("css", "css"),
         ("bash", "bash"),
+        ("haskell", "hs"),
+        ("lisp", "lisp"),
+        ("ocaml", "ml"),
+        ("prolog", "pl"),
+        ("zig", "zig"),
     ]
     .iter()
     .cloned()
@@ -236,7 +246,7 @@ fn lang_to_extension(lang: &Lang) -> String {
 fn reqire_main(lang: &Lang) -> bool {
     matches!(
         lang.language.to_lowercase().as_str(),
-        "rust" | "c++" | "c" | "go" | "java"
+        "rust" | "c++" | "c" | "go" | "java" | "zig"
     )
 }
 
@@ -249,7 +259,11 @@ fn code_generator<T: AsRef<str>>(code: T, lang: &Lang) -> String {
             "rust" => format!("fn main() {{{code}}}"),
             "c" | "c++" => format!("int main() {{{code}}}"),
             "go" => format!("func main() {{{code}}}"),
-            _ => format!("public class Main {{public static void main(String[] args) {{{code}}}}}"),
+            "java" => {
+                format!("public class Main {{public static void main(String[] args) {{{code}}}}}")
+            }
+            // for zig
+            _ => format!("pub fn main() void {{{code}}}"),
         }
     } else {
         println!("{code}");
