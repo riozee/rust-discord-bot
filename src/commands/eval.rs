@@ -34,7 +34,10 @@ pub fn slash_register() -> CreateCommand {
                 .add_string_choice("lisp", "lisp")
                 .add_string_choice("ocaml", "ocaml")
                 .add_string_choice("prolog", "prolog")
-                .add_string_choice("zig", "zig"),
+                .add_string_choice("zig", "zig")
+                .add_string_choice("swift", "swift")
+                .add_string_choice("scala", "scala")
+                .add_string_choice("nim", "nim"),
         )
 }
 
@@ -231,6 +234,9 @@ fn lang_to_extension(lang: &Lang) -> String {
         ("ocaml", "ml"),
         ("prolog", "pl"),
         ("zig", "zig"),
+        ("swift", "swift"),
+        ("scala", "sc"),
+        ("nim", "nim"),
     ]
     .iter()
     .cloned()
