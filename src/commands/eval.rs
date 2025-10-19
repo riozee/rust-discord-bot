@@ -24,7 +24,7 @@ pub fn slash_register() -> CreateCommand {
                 .add_string_choice("Python", "python")
                 .add_string_choice("C", "c")
                 .add_string_choice("C++", "cpp")
-                .add_string_choice("Jave", "java")
+                .add_string_choice("Java", "java")
                 .add_string_choice("JavaScript", "javascript")
                 .add_string_choice("TypeScript", "typescript")
                 .add_string_choice("Go", "go")
