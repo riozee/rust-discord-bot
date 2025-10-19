@@ -24,7 +24,7 @@ pub fn slash_register() -> CreateCommand {
                 .add_string_choice("Python", "python")
                 .add_string_choice("C", "c")
                 .add_string_choice("C++", "cpp")
-                .add_string_choice("Jave", "java")
+                .add_string_choice("Java", "java")
                 .add_string_choice("JavaScript", "javascript")
                 .add_string_choice("TypeScript", "typescript")
                 .add_string_choice("Go", "go")
@@ -164,7 +164,7 @@ impl Display for Resp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "lang: {}\nversion: {}\nresult:\n```bash\n{}```",
+            "lang: {}\nversion: {}\nresult:\n```\n{}```",
             self.language, self.version, self.run.output
         )
     }
