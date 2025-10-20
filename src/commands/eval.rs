@@ -39,6 +39,11 @@ pub fn slash_register() -> CreateCommand {
                 .add_string_choice("scala", "scala")
                 .add_string_choice("nim", "nim"),
         )
+        .add_option(CreateCommandOption::new(
+            CommandOptionType::Boolean,
+            "no-main",
+            "without main(){}",
+        ))
 }
 
 pub async fn slash_execute(
@@ -59,6 +64,16 @@ pub async fn slash_execute(
         .iter()
         .find(|opt| opt.name == "lang")
         .unwrap();
+
+    let without_main = command
+        .data
+        .options
+        .iter()
+        .find(|opt| opt.name == "no-main")
+        .unwrap()
+        .value
+        .as_bool()
+        .unwrap_or(true);
 
     let code = if let CommandDataOptionValue::String(code_val) = code_opt.value.clone() {
         code_val
@@ -109,8 +124,8 @@ pub async fn slash_execute(
         }
     };
 
-    let req_info = ReqJson::new(lang, code.clone());
-    let ccc = req_info.get_gen_code();
+    let req_info = ReqJson::new(lang, code.clone(), without_main);
+    let ccc = req_info.get_generated_code();
     println!("{req_info:?}");
     let res = match run_with_api(req_info).await {
         Ok(r) => r,
@@ -188,15 +203,15 @@ struct ReqJson {
 
 impl ReqJson {
     /// lang引数はLang struct。Lang structはversion情報を含む
-    fn new(lang: &Lang, code: String) -> Self {
+    fn new(lang: &Lang, code: String, without_main: bool) -> Self {
         Self {
             language: lang.language.clone(),
             version: lang.version.clone(),
-            files: vec![FileContent::new(lang, code)],
+            files: vec![FileContent::new(lang, code, without_main)],
         }
     }
 
-    fn get_gen_code(&self) -> String {
+    fn get_generated_code(&self) -> String {
         self.files[0].content.clone()
     }
 }
@@ -208,11 +223,11 @@ struct FileContent {
 }
 
 impl FileContent {
-    fn new<T: AsRef<str>>(lang: &Lang, code: T) -> Self {
+    fn new<T: AsRef<str>>(lang: &Lang, code: T, without_main: bool) -> Self {
         let code = code.as_ref().to_string();
         Self {
             name: format!("main.{}", lang_to_extension(lang)),
-            content: code_generator(code, lang),
+            content: code_generator(code, lang, without_main),
         }
     }
 }
@@ -262,14 +277,14 @@ fn reqire_main(lang: &Lang) -> bool {
 }
 
 /// `reqire_main()`によってmain(){}などを追加して実行可能なコードを生成
-fn code_generator<T: AsRef<str>>(code: T, lang: &Lang) -> String {
+fn code_generator<T: AsRef<str>>(code: T, lang: &Lang, without_main: bool) -> String {
     let code = code.as_ref().to_string();
-    if reqire_main(lang) {
+    if reqire_main(lang) && !without_main {
         let lang_name = lang.language.clone();
         match lang_name.as_str() {
             "rust" => format!("fn main() {{{code}}}"),
             "c" | "c++" => format!("int main() {{{code}}}"),
-            "go" => format!("func main() {{{code}}}"),
+            "go" => format!("package main\nimport \"fmt\"\nfunc main(){{{code}}}"),
             "java" => {
                 format!("public class Main {{public static void main(String[] args) {{{code}}}}}")
             }
