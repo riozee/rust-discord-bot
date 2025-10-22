@@ -41,8 +41,13 @@ pub fn slash_register() -> CreateCommand {
         )
         .add_option(CreateCommandOption::new(
             CommandOptionType::Boolean,
-            "no-main",
-            "without main(){}",
+            "no-wrap-main",
+            "without wrapping with main(){}",
+        ))
+        .add_option(CreateCommandOption::new(
+            CommandOptionType::Boolean,
+            "hide",
+            "only show runner",
         ))
 }
 
@@ -50,7 +55,20 @@ pub async fn slash_execute(
     ctx: &Context,
     command: &serenity::model::application::CommandInteraction,
 ) -> serenity::Result<()> {
-    command.defer(&ctx.http).await?;
+    let hide = command
+        .data
+        .options
+        .iter()
+        .find(|opt| opt.name == "hide")
+        .and_then(|opt| opt.value.as_bool())
+        .unwrap_or(false);
+
+    if hide {
+        command.defer_ephemeral(&ctx.http).await?;
+    } else {
+        command.defer(&ctx.http).await?;
+    }
+
     // required(true)のためunwrap
     let code_opt = command
         .data
@@ -69,11 +87,9 @@ pub async fn slash_execute(
         .data
         .options
         .iter()
-        .find(|opt| opt.name == "no-main")
-        .unwrap()
-        .value
-        .as_bool()
-        .unwrap_or(true);
+        .find(|opt| opt.name == "no-wrap-main")
+        .and_then(|opt| opt.value.as_bool())
+        .unwrap_or(false);
 
     let code = if let CommandDataOptionValue::String(code_val) = code_opt.value.clone() {
         code_val
@@ -141,15 +157,10 @@ pub async fn slash_execute(
         }
     };
 
-    command
-        .edit_response(
-            &ctx,
-            serenity::builder::EditInteractionResponse::new()
-                .content(format!("```{}\n{ccc}\n```\n{res}", lang.language)),
-        )
-        .await?;
+    let response_content = format!("```{}\n{ccc}\n```\n{res}", lang.language);
+    let builder = serenity::builder::EditInteractionResponse::new().content(response_content);
 
-    // command.edit_response(cache_http, builder)
+    command.edit_response(&ctx, builder).await?;
 
     Ok(())
 }
