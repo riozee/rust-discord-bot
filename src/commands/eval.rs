@@ -23,7 +23,7 @@ pub fn slash_register() -> CreateCommand {
                 .add_string_choice("Rust", "rust")
                 .add_string_choice("Python", "python")
                 .add_string_choice("C", "c")
-                .add_string_choice("C++", "cpp")
+                .add_string_choice("C++", "c++")
                 .add_string_choice("Java", "java")
                 .add_string_choice("JavaScript", "javascript")
                 .add_string_choice("TypeScript", "typescript")
@@ -130,10 +130,11 @@ pub async fn slash_execute(
     let lang = match langs.get(&lang) {
         Some(l) => l,
         None => {
+            let c = format!("not supported lang: {}", &lang);
             command
                 .edit_response(
                     &ctx,
-                    serenity::builder::EditInteractionResponse::new().content("非対応の言語です。"),
+                    serenity::builder::EditInteractionResponse::new().content(c),
                 )
                 .await?;
             return Ok(());
@@ -294,7 +295,12 @@ fn code_generator<T: AsRef<str>>(code: T, lang: &Lang, without_main: bool) -> St
         let lang_name = lang.language.clone();
         match lang_name.as_str() {
             "rust" => format!("fn main() {{{code}}}"),
-            "c" | "c++" => format!("int main() {{{code}}}"),
+            "c" => format!(
+                "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\nint main() {{{code}}}"
+            ),
+            "c++" => format!(
+                "#include <iostream>\n#include <string>\n#include <vector>\n#include <array>\nint main() {{{code}}}"
+            ),
             "go" => format!("package main\nimport \"fmt\"\nfunc main(){{{code}}}"),
             "java" => {
                 format!("public class Main {{public static void main(String[] args) {{{code}}}}}")
@@ -324,7 +330,9 @@ impl Languages {
     }
 
     fn get<T: AsRef<str>>(&self, lang: T) -> Option<&Lang> {
-        self.0.iter().find(|s| s.language == lang.as_ref())
+        self.0
+            .iter()
+            .find(|s| s.language.to_lowercase() == lang.as_ref().to_lowercase())
     }
 }
 
