@@ -85,6 +85,11 @@ impl EventHandler for Handler {
                         println!("/eval 実行エラー: {why:?}");
                     }
                 }
+                commands::hukidashi::NAME => {
+                    if let Err(why) = commands::hukidashi::slash_execute(&_ctx, &command).await {
+                        println!("/huki 実行エラー: {why:?}");
+                    }
+                }
                 _ => {
                     if let Err(why) = command
                         .create_response(
