@@ -3,6 +3,7 @@
 pub mod get;
 pub mod gpt;
 pub mod help;
+pub mod hukidashi;
 pub mod ping;
 pub mod post;
 pub mod tex;
@@ -26,5 +27,6 @@ pub fn slash_commands() -> Vec<CreateCommand> {
         post::slash_register(),
         gpt::slash_register(),
         eval::slash_register(),
+        hukidashi::slash_register(),
     ]
 }
