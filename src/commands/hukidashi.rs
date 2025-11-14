@@ -51,10 +51,8 @@ fn mul_str<T: AsRef<str> + Sized>(msg: &T, mul: u32) -> String {
 // ￣人人人人人人人￣
 fn s2huki<T: AsRef<str>>(s: T) -> String {
     let max_width = get_max_len(&s);
-    //                          discordのフォントによるが-2では表示が崩れる
-    let buns = mul_str(&"人", max_width - 4);
-    let top = format!("＿{}＿\n", &buns);
-    let btm = format!("￣{}￣\n", &buns);
+    let top = format!("＿{}＿\n", mul_str(&"人", max_width / 2));
+    let btm = format!("￣{}￣\n", mul_str(&"Y^", max_width / 2));
     let mut ss = String::new();
     ss.push_str(&top);
     for l in s.as_ref().lines() {
