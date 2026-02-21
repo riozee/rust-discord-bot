@@ -13,6 +13,14 @@ pub fn slash_register() -> CreateCommand {
             CreateCommandOption::new(CommandOptionType::String, "content", "totuzen no shi")
                 .required(true),
         )
+        .add_option(
+            CreateCommandOption::new(
+                CommandOptionType::Boolean,
+                "x2",
+                "Make the frame twice as big.",
+            )
+            .required(false),
+        )
 }
 
 fn get_str_len<T: AsRef<str>>(strg: T) -> u32 {
@@ -63,6 +71,34 @@ fn s2huki<T: AsRef<str>>(s: T) -> String {
     ss
 }
 
+fn s2hukix2<T: AsRef<str>>(s: T) -> String {
+    let max_width = get_max_len(&s);
+    let gap = 4;
+    let over_top = format!("＿{}＿", mul_str(&"人", max_width / 2 + gap + 1));
+    let top = format!(
+        "＞{}＿{}＿{}＜\n",
+        mul_str(&" ", gap / 2 - 1),
+        mul_str(&"人", max_width / 2 + 2),
+        mul_str(&" ", gap / 2 - 1)
+    );
+    let btm = format!(
+        "＞{}￣{}￣{}＜",
+        mul_str(&" ", gap / 2 - 1),
+        mul_str(&"Y^", max_width / 2 + 2),
+        mul_str(&" ", gap / 2 - 1)
+    );
+    let over_btm = format!("￣{}￣\n", mul_str(&"Y^", max_width / 2 + gap));
+
+    let mut ss = String::new();
+    ss.push_str(&format!("{}\n{}", &over_top, &top));
+    for l in s.as_ref().lines() {
+        let fit_spc = mul_str(&" ", max_width - get_str_len(l) + 3);
+        ss.push_str(&format!("＞＞ {}{} ＜＜\n", l, fit_spc));
+    }
+    ss.push_str(&format!("{}\n{}", &btm, &over_btm));
+    ss
+}
+
 pub async fn slash_execute(
     ctx: &Context,
     command: &serenity::model::application::CommandInteraction,
@@ -75,9 +111,22 @@ pub async fn slash_execute(
         .unwrap()
         .value
         .clone();
+    let input_x2_mode = command
+        .data
+        .options
+        .iter()
+        .find(|opt| opt.name == "x2")
+        .unwrap()
+        .value
+        .clone();
 
     let c = if let CommandDataOptionValue::String(cc) = input {
-        s2huki(cc)
+        let x2_mode = if let CommandDataOptionValue::Boolean(x) = input_x2_mode {
+            x
+        } else {
+            false
+        };
+        if x2_mode { s2hukix2(cc) } else { s2huki(cc) }
     } else {
         "なんかダメだったぁ".to_string()
     };
@@ -92,11 +141,28 @@ pub async fn slash_execute(
     Ok(())
 }
 
-#[test]
-fn test_s2huki() {
-    let foo = "突然の死";
-    let bar = "foo\nbar\nfoobar";
+#[cfg(test)]
+mod tests {
+    use crate::commands::hukidashi::{s2huki, s2hukix2};
 
-    println!("{}", s2huki(foo));
-    println!("{}", s2huki(bar));
+    #[test]
+    fn test_s2huki() {
+        let foo = "突然の死";
+        let bar = "foo\nbar\nfoobar";
+
+        println!("{}", s2huki(foo));
+        println!("{}", s2huki(bar));
+    }
+
+    #[test]
+    fn test_s2huki_x2() {
+        let foo = "突然の死";
+        let bar = "foo\nbar\nfoobar";
+
+        println!("{}", s2hukix2(foo));
+        // assert_eq!(
+        //     s2hukix2(bar),
+        //     "＿人人人人人人人人＿\n＞ ＿人人人人人＿ ＜\n＞＞ foo       ＜＜\n＞＞ bar       ＜＜\n＞＞ foobar    ＜＜\n＞ ￣Y^Y^Y^Y^Y^￣ ＜\n￣Y^Y^Y^Y^Y^Y^Y^￣\n"
+        // );
+    }
 }
