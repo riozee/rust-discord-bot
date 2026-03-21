@@ -113,9 +113,16 @@ impl EventHandler for Handler {
         if msg.author.bot {
             return;
         }
+        
+        let content = msg.content.trim();
+        
+        // "yay" に "-Syu" を返す
+        if content == "yay" {
+            let _ = msg.channel_id.say(&ctx.http, "-Syu").await;
+            return;
+        }
 
         // シンプルなプレフィックス解析
-        let content = msg.content.trim();
         if !content.starts_with(commands::PREFIX) {
             return;
         }
