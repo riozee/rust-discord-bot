@@ -22,6 +22,8 @@ async fn run_tgpt(query: &str, preprompt: &str) -> Result<Vec<u8>, String> {
     let mut cmd = Command::new("tgpt");
     cmd.arg("--quiet")
         .arg("--whole")
+        .arg("--provider")
+        .arg("sky")
         .arg("--preprompt")
         .arg(preprompt)
         .arg(query)
